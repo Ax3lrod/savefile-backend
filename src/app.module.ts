@@ -3,12 +3,14 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaService } from './prisma.service';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-    }), // biar .env bisa diakses di mana saja
+    }),
+    AuthModule, // biar .env bisa diakses di mana saja
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
