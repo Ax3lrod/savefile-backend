@@ -3,7 +3,10 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { PrismaService } from '../prisma.service';
-import { SteamRecentlyPlayedResponse } from '../common/types/steam.types';
+import {
+  SteamRecentlyPlayedResponse,
+  SteamStoreResponse,
+} from '../common/types/steam.types';
 
 @Injectable()
 export class SteamService {
@@ -68,6 +71,39 @@ export class SteamService {
       this.logger.error(
         `Failed to sync games for user ${userId}: ${errorMessage}`,
       );
+    }
+  }
+
+  async enrichGameDetails(steamAppId: number): Promise<void> {
+    const url = `https://store.steampowered.com/api/appdetails?appids=${steamAppId}`;
+
+    try {
+      const { data } = await firstValueFrom(
+        this.httpService.get<SteamStoreResponse>(url),
+      );
+
+      const gameData = data[steamAppId.toString()];
+
+      if (gameData?.success) {
+        const details = gameData.data;
+
+        await this.prisma.game.update({
+          where: { steamAppId },
+          data: {
+            description: details.short_description,
+            developers: details.developers?.join(', '),
+            genres: details.genres?.map((g) => g.description).join(', '),
+            publisher: details.publishers?.join(', '),
+            imageUrl: details.header_image,
+            isStub: false, // Mark as enriched
+          },
+        });
+        this.logger.log(`Enriched data for game: ${details.name}`);
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to enrich game ${steamAppId}: ${errorMessage}`);
     }
   }
 }

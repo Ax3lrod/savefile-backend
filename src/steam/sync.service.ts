@@ -51,6 +51,28 @@ export class SyncService {
     this.logger.debug(`Completed automated Steam sync for all users.`);
   }
 
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async handleGameEnrichment() {
+    const stubGames = await this.prisma.game.findMany({
+      where: { isStub: true },
+      take: 5, // Batasi jumlah game yang diproses per batch untuk menghindari rate limit
+    });
+
+    if (stubGames.length === 0) {
+      this.logger.debug('No stub games found for enrichment.');
+      return;
+    }
+
+    this.logger.debug(
+      `Enriching details for ${stubGames.length} stub games...`,
+    );
+
+    for (const game of stubGames) {
+      await this.steamService.enrichGameDetails(game.steamAppId);
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Delay 1 detik antar request untuk menghindari rate limit
+    }
+  }
+
   // Opsional: Jalankan sync sekali saat aplikasi mulai
   async onModuleInit() {
     this.logger.log('Running initial Steam sync on module init...');

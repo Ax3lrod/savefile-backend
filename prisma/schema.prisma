@@ -21,6 +21,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   logs Log[]
+  reviews Review[]
 }
 
 model Game {
@@ -28,10 +29,16 @@ model Game {
   steamAppId Int @unique
   name String
   imageUrl String?
+  description String? @db.Text
+  developers String?
+  genres String?
+  publisher String?
+  steamRating String?
   isStub Boolean @default(true) // Untuk lazy import
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   logs Log[]
+  reviews Review[]
 }
 
 model Log {
@@ -43,4 +50,18 @@ model Log {
   user User @relation(fields: [userId], references: [id])
   game Game @relation(fields: [gameId], references: [id])
   @@unique([userId, gameId]) // Satu user cuma punya satu log per game
+}
+
+model Review {
+  id String @id @default(cuid())
+  userId String
+  gameId String
+  rating Int
+  content String? @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id])
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@unique([userId, gameId]) // Satu user cuma boleh review satu kali per game
 }
