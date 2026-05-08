@@ -1,98 +1,161 @@
+# 🎮 SaveFile - Backend
+
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" />
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+**SaveFile** is a social platform for gamers, often described as "Letterboxd for games." It allows users to log their gaming activity, rate and review games, pamer achievements, and showcase their gaming collections. The backend is designed to integrate seamlessly with the Steam API for automated activity tracking.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🛠 Tech Stack
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+| Technology | Purpose | Badge |
+| :--- | :--- | :--- |
+| **NestJS** | Framework | ![NestJS](https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white) |
+| **TypeScript** | Language | ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white) |
+| **PostgreSQL** | Database | ![PostgreSQL](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white) |
+| **Prisma 7** | ORM | ![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white) |
+| **Docker** | Infrastructure | ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white) |
+| **Passport & OpenID** | Authentication | ![Steam](https://img.shields.io/badge/steam-%23000000.svg?style=for-the-badge&logo=steam&logoColor=white) |
 
-## Project setup
+---
 
-```bash
-$ pnpm install
+## 🏗 System Architecture
+
+The SaveFile backend follows a modular monolith architecture, leveraging NestJS's dependency injection system.
+
+### High-Level Flow
+```mermaid
+graph TD
+    User((User)) -->|Login| AuthModule[Auth Module]
+    AuthModule -->|Verify| SteamOpenID[Steam OpenID]
+    SteamOpenID -->|SteamID| AuthService[Auth Service]
+    AuthService -->|Upsert| DB[(PostgreSQL)]
+
+    subgraph Sync Engine
+        Cron[Schedule Module] -->|Hourly| SyncService[Sync Service]
+        SyncService -->|Get Recently Played| SteamAPI[Steam Web API]
+        SteamAPI -->|Playtime Data| SteamService[Steam Service]
+        SteamService -->|Lazy Import| DB
+    end
+
+    subgraph Background Worker
+        Worker[Enrichment Cron] -->|Every 5m| GameService[Steam Service]
+        GameService -->|Fetch Metadata| SteamStore[Steam Store API]
+        SteamStore -->|Genres/Desc| DB
+    end
 ```
 
-## Compile and run the project
+### Module Breakdown
+*   **Auth Module:** Handles the "Front Door." Manages sessions, passport strategies, and user identity persistence.
+*   **Steam Module:** The "Engine Room." Contains logic for external API communication and data processing.
+*   **Database (Prisma):** The "Source of Truth." Uses a Driver Adapter for high-performance PostgreSQL connections.
+*   **Sync Engine:** A collection of automated tasks that keep the user's gaming history up-to-date without manual intervention.
 
-```bash
-# development
-$ pnpm run start
+---
 
-# watch mode
-$ pnpm run start:dev
+*   **Steam OpenID Authentication:** Secure login via Steam account.
+*   **Automated Sync Engine:** Background cron jobs to pull recently played games and playtime from Steam.
+*   **Lazy Game Import:** Automatically creates "Stub" game records for new Steam games and enriches them with metadata (descriptions, genres, developers) in the background.
+*   **Gaming Logs & Reviews:** Track playtime and write reviews with ratings (atomic `upsert` operations).
+*   **Type-Safe Architecture:** Full TypeScript implementation with centralized types for external APIs (Steam Store & Player Service).
 
-# production mode
-$ pnpm run start:prod
+---
+
+## 📂 Project Structure
+
+```text
+src/
+├── auth/           # Steam OpenID strategy, session management & serialization
+├── common/         
+│   └── types/      # Centralized TypeScript interfaces (Steam, Auth, etc.)
+├── steam/          # Core Sync Engine, API clients, and background workers
+├── app.module.ts   # Root module linking all features
+├── main.ts         # Entry point (Session & Global Prefix setup)
+└── prisma.service.ts # Prisma 7 Driver Adapter implementation
 ```
 
-## Run tests
+---
 
-```bash
-# unit tests
-$ pnpm run test
+## ⚙️ Setup & Installation
 
-# e2e tests
-$ pnpm run test:e2e
+### 1. Prerequisites
+*   Node.js (v20+)
+*   pnpm
+*   Docker Desktop (Running)
 
-# test coverage
-$ pnpm run test:cov
+### 2. Configuration
+Create a `.env` file in the root directory:
+
+```env
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/savefile?schema=public
+
+# Steam API
+STEAM_API_KEY=YOUR_STEAM_WEB_API_KEY
+BASE_URL=http://localhost:3000
+
+# Auth
+SESSION_SECRET=a_very_secret_key
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+### 3. Spin up Infrastructure
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+docker-compose up -d
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 4. Install Dependencies
+```bash
+pnpm install
+```
 
-## Resources
+### 5. Database Migration & Client Generation
+```bash
+# This applies the schema to PostgreSQL and generates types
+npx prisma migrate dev --name init
+npx prisma generate
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+---
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## 🏃 Compilation & Execution
 
-## Support
+```bash
+# Development mode (watch mode)
+pnpm run start:dev
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Production mode
+pnpm run build
+pnpm run start:prod
+```
 
-## Stay in touch
+---
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## 🧪 Testing
 
-## License
+```bash
+# Unit tests
+pnpm run test
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# End-to-end tests
+pnpm run test:e2e
+
+# Test coverage
+pnpm run test:cov
+```
+
+---
+
+## 📡 API Endpoints (Core)
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/health` | System health check |
+| `GET` | `/api/auth/steam` | Initiate Steam Login |
+| `GET` | `/api/auth/steam/return` | Steam authentication callback |
+
+---
+
+## 📜 License
+SaveFile is [MIT licensed](LICENSE).
