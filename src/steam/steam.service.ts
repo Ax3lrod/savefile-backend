@@ -66,8 +66,10 @@ export class SteamService {
         });
       }
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       this.logger.error(
         `Failed to sync games for user ${userId}: ${errorMessage}`,
       );
@@ -78,13 +80,14 @@ export class SteamService {
     const url = `https://store.steampowered.com/api/appdetails?appids=${steamAppId}`;
 
     try {
-      const { data } = await firstValueFrom(
+      const response = await firstValueFrom(
         this.httpService.get<SteamStoreResponse>(url),
       );
 
+      const data = response.data;
       const gameData = data[steamAppId.toString()];
 
-      if (gameData?.success) {
+      if (gameData && gameData.success) {
         const details = gameData.data;
 
         await this.prisma.game.update({
@@ -95,14 +98,17 @@ export class SteamService {
             genres: details.genres?.map((g) => g.description).join(', '),
             publisher: details.publishers?.join(', '),
             imageUrl: details.header_image,
+            steamRating: details.metacritic?.score.toString() || null,
             isStub: false, // Mark as enriched
           },
         });
         this.logger.log(`Enriched data for game: ${details.name}`);
       }
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       this.logger.error(`Failed to enrich game ${steamAppId}: ${errorMessage}`);
     }
   }

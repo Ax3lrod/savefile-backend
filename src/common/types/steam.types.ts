@@ -22,6 +22,7 @@ export interface SteamStoreGameDetails {
     publishers?: string[];
     genres?: { id: string; description: string }[];
     header_image: string;
+    metacritic?: { score: number; url: string };
   };
 }
 

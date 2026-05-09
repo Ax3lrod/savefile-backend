@@ -53,23 +53,23 @@ export class SyncService {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async handleGameEnrichment() {
-    const stubGames = await this.prisma.game.findMany({
-      where: { isStub: true },
-      take: 5, // Batasi jumlah game yang diproses per batch untuk menghindari rate limit
+    const gamesToEnrich = await this.prisma.game.findMany({
+      where: {
+        OR: [{ isStub: true }, { steamRating: null }],
+      },
+      take: 5,
     });
 
-    if (stubGames.length === 0) {
-      this.logger.debug('No stub games found for enrichment.');
+    if (gamesToEnrich.length === 0) {
+      this.logger.debug('No games found for enrichment.');
       return;
     }
 
-    this.logger.debug(
-      `Enriching details for ${stubGames.length} stub games...`,
-    );
+    this.logger.debug(`Enriching details for ${gamesToEnrich.length} games...`);
 
-    for (const game of stubGames) {
+    for (const game of gamesToEnrich) {
       await this.steamService.enrichGameDetails(game.steamAppId);
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Delay 1 detik antar request untuk menghindari rate limit
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
 
