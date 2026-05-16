@@ -75,9 +75,10 @@ export class SyncService {
 
   // Opsional: Jalankan sync sekali saat aplikasi mulai
   async onModuleInit() {
+    this.logger.log('Waiting 5s for database to settle before initial sync...');
+    await new Promise((resolve) => setTimeout(resolve, 5000));
     this.logger.log('Running initial Steam sync on module init...');
 
-    // Jalankan sync sekali saat aplikasi mulai
     await this.handleAutomatedSync();
   }
 }

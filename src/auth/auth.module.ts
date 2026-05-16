@@ -6,7 +6,7 @@ import { PrismaService } from 'src/prisma.service';
 import { SessionSerializer } from './session.serializer';
 
 @Module({
-  providers: [AuthService, SteamStrategy, PrismaService, SessionSerializer],
+  providers: [AuthService, SteamStrategy, SessionSerializer],
   controllers: [AuthController],
 })
 export class AuthModule {}

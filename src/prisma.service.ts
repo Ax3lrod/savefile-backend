@@ -6,14 +6,19 @@ import { Pool } from 'pg';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
-    // 1. ambil connection string dari environment variable
+    // 1. Ambil URL dari environment
     const connectionString = process.env.DATABASE_URL;
-    // 2. buat pool koneksi ke Postgres
+
+    // 2. Buat koneksi pool pakai driver 'pg'
     const pool = new Pool({ connectionString });
-    // 3. buat adapter Prisma untuk Postgres
+
+    // 3. Masukkan ke adapter Prisma
     const adapter = new PrismaPg(pool);
+
+    // 4. Panggil constructor asli Prisma dengan adapter tersebut
     super({ adapter });
   }
+
   async onModuleInit() {
     await this.$connect();
   }

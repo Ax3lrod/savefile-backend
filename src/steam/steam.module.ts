@@ -6,7 +6,7 @@ import { SyncService } from './sync.service';
 
 @Module({
   imports: [HttpModule],
-  providers: [SteamService, PrismaService, SyncService],
+  providers: [SteamService, SyncService],
   exports: [SteamService],
 })
 export class SteamModule {}

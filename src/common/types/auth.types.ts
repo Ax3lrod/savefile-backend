@@ -1,3 +1,5 @@
+import { Request } from 'express';
+
 export interface SteamUser {
   steamId: string;
   username: string;
@@ -11,4 +13,9 @@ export interface UserProfile {
   avatar: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface AuthenticatedRequest extends Request {
+  isAuthenticated(): this is AuthenticatedRequest;
+  user: UserProfile;
 }
