@@ -11,6 +11,13 @@ datasource db {
   provider = "postgresql"
 }
 
+model Session {
+  id        String   @id
+  sid       String   @unique
+  data      String   @db.Text
+  expiresAt DateTime
+}
+
 model User {
   id String @id @default(cuid())
   username String? @unique

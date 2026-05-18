@@ -5,10 +5,15 @@ import passport from 'passport';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
+import { PrismaSessionStore } from '@quixo3/prisma-session-store';
+import { PrismaService } from './prisma.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
+
+  // Retrieve the already configured PrismaService
+  const prismaService = app.get(PrismaService);
 
   // Swagger/OpenAPI Configuration
   const config = new DocumentBuilder()
@@ -35,7 +40,19 @@ async function bootstrap() {
       secret: process.env.SESSION_SECRET || 'default_secret',
       resave: false,
       saveUninitialized: false,
-      cookie: { maxAge: 360 * 60 * 1000 }, // 1 jam
+      name: 'savefile.sid',
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      store: new PrismaSessionStore(prismaService as any, {
+        checkPeriod: 2 * 60 * 1000, // Ms
+        dbRecordIdIsSessionId: true,
+        dbRecordIdFunction: undefined,
+      }),
+      cookie: {
+        maxAge: 360 * 60 * 1000, // 1 jam
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      },
     }),
   );
 
@@ -52,4 +69,5 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
 }
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 bootstrap();
