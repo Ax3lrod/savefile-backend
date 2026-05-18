@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { SteamModule } from './steam/steam.module';
 import { ReviewModule } from './review/review.module';
 import { PrismaModule } from './prisma.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PrismaModule } from './prisma.module';
     ScheduleModule.forRoot(),
     SteamModule,
     ReviewModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -12,9 +12,23 @@ export class ReviewController {
 
   @Post()
   @UseGuards(AuthenticatedGuard)
-  @ApiOperation({ summary: 'Post a new review or update existing one' })
-  @ApiResponse({ status: 201, description: 'Review successfully posted.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiOperation({
+    summary: 'Post or Update Review',
+    description:
+      'Allows an authenticated user to rate (1-5) and review a game. If a review already exists for this game/user combo, it will be updated.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Review successfully created or updated.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data (validation failed).',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized. User must be logged in via Steam.',
+  })
   async postReview(
     @Req() req: AuthenticatedRequest,
     @Body() dto: CreateReviewDto,
@@ -24,8 +38,15 @@ export class ReviewController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all reviews' })
-  @ApiResponse({ status: 200, description: 'Return all reviews.' })
+  @ApiOperation({
+    summary: 'Get All Reviews',
+    description:
+      'Returns a list of all game reviews with associated user and game metadata.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of reviews returned successfully.',
+  })
   async getAllReviews() {
     return this.reviewService.getAllReviews();
   }

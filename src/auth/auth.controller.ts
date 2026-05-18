@@ -22,16 +22,31 @@ export class AuthController {
 
   @Get('steam')
   @UseGuards(AuthGuard('steam'))
-  @ApiOperation({ summary: 'Initiate Steam OpenID authentication' })
+  @ApiOperation({
+    summary: 'Initiate Steam Login',
+    description: 'Redirects the user to the Steam OpenID authentication page.',
+  })
+  @ApiResponse({ status: 302, description: 'Redirect to Steam.' })
   async steamLogin() {
     // This route will redirect the user to Steam for authentication
   }
 
   @Get('steam/return')
   @UseGuards(AuthGuard('steam'))
-  @ApiOperation({ summary: 'Steam authentication callback' })
-  @ApiResponse({ status: 200, description: 'Authentication successful.' })
-  @ApiResponse({ status: 401, description: 'Authentication failed.' })
+  @ApiOperation({
+    summary: 'Steam Auth Callback',
+    description:
+      'Handles the return from Steam and establishes the user session.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Authentication successful. User session established.',
+  })
+  @ApiResponse({ status: 401, description: 'Steam authentication failed.' })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error during session creation.',
+  })
   async steamCallback(@Req() req: AuthenticatedRequest, @Res() res: Response) {
     try {
       if (!req.user) {
