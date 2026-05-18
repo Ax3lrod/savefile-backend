@@ -78,6 +78,17 @@ src/
 
 ---
 
+## 🛠 Useful Commands
+
+| Task | Command | Description |
+| :--- | :--- | :--- |
+| **Start Backend** | `pnpm run start:dev` | Runs the app in watch mode |
+| **Prisma GUI** | `npx prisma studio` | Opens database browser at `localhost:5555` |
+| **API Docs** | [Local Docs](http://localhost:3000/docs) | Opens Interactive Scalar UI (Modern Swagger) |
+| **Database Migration**| `npx prisma migrate dev`| Applies schema changes to PostgreSQL |
+
+---
+
 ## ⚙️ Setup & Installation
 
 ### 1. Prerequisites
